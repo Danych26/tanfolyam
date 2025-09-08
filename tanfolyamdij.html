@@ -1,0 +1,137 @@
+<div id="tanfolyam-kalkulator">
+  <label>Alkalom / hét:
+    <select id="alkalomHet">
+      <option value="1">1 alkalom/hét</option>
+      <option value="2">2 alkalom/hét</option>
+    </select>
+  </label>
+  <br>
+
+  <label>Státusz:
+    <select id="statusz">
+      <option value="felnott">Felnőtt</option>
+      <option value="diak">Diák</option>
+    </select>
+  </label>
+  <br>
+
+  <label>Csomag:
+    <select id="csomag">
+      <option value="1">1 alkalom</option>
+      <option value="5">5 alkalom</option>
+      <option value="10">10 alkalom</option>
+      <option value="felev">Féléves</option>
+      <option value="ev">Éves</option>
+    </select>
+  </label>
+  <br><br>
+
+  <button onclick="szamol()">Végösszeg kiszámítása</button>
+
+  <h3 id="eredmeny"></h3>
+  <div id="paypal-button-container"></div>
+</div>
+
+<!-- PayPal SDK betöltése -->
+<script src="https://www.paypal.com/sdk/js?client-id=YOUR_CLIENT_ID&currency=HUF"></script>
+
+<style>
+/* Konténer */
+#tanfolyam-kalkulator {
+  max-width: 500px;
+  margin: 40px auto;
+  padding: 20px 30px;
+  border: 1px solid #000;
+  border-radius: 10px;
+  background: #fff;
+  font-family: "Georgia", serif;
+  text-align: center;
+}
+#tanfolyam-kalkulator h3 {
+  margin-top: 20px;
+  font-size: 20px;
+  font-weight: bold;
+  color: #000;
+  border-top: 1px solid #000;
+  padding-top: 15px;
+}
+#tanfolyam-kalkulator label {
+  display: block;
+  margin: 15px 0 5px;
+  font-size: 16px;
+  font-weight: bold;
+}
+#tanfolyam-kalkulator select {
+  width: 80%;
+  padding: 8px;
+  font-size: 15px;
+  border: 1px solid #000;
+  border-radius: 6px;
+  background: #fff;
+  color: #000;
+  transition: 0.2s;
+}
+#tanfolyam-kalkulator select:focus {
+  outline: none;
+  border-color: #c00;
+}
+#tanfolyam-kalkulator button {
+  margin-top: 20px;
+  padding: 10px 20px;
+  font-size: 16px;
+  font-weight: bold;
+  border: 2px solid #000;
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+  transition: 0.2s;
+}
+#tanfolyam-kalkulator button:hover {
+  background: #c00;
+  color: #fff;
+}
+#paypal-button-container {
+  margin-top: 20px;
+}
+</style>
+
+<script>
+  const arak = {
+    "1": { // 1 alkalom/hét
+      "felnott": { "1": 5000, "5": 14000, "10": 25000, "felev": 35000, "ev": 60000 },
+      "diak":   { "1": 4000, "5": 11000, "10": 20000, "felev": 26500, "ev": 45000 }
+    },
+    "2": { // 2 alkalom/hét
+      "felnott": { "1": 10000, "5": 28000, "10": 40000, "felev": 55000, "ev": 95000 },
+      "diak":   { "1": 8000, "5": 23000, "10": 30000, "felev": 40000, "ev": 70000 }
+    }
+  };
+
+  function szamol() {
+    const alkalomHet = document.getElementById("alkalomHet").value;
+    const statusz = document.getElementById("statusz").value;
+    const csomag = document.getElementById("csomag").value;
+
+    const osszeg = arak[alkalomHet][statusz][csomag];
+    document.getElementById("eredmeny").innerText = "Végösszeg: " + osszeg + " Ft";
+
+    // PayPal gomb újrarenderelése
+    if (window.paypal) {
+      document.getElementById("paypal-button-container").innerHTML = "";
+      paypal.Buttons({
+        createOrder: function(data, actions) {
+          return actions.order.create({
+            purchase_units: [{
+              amount: { value: osszeg.toString(), currency_code: "HUF" }
+            }]
+          });
+        },
+        onApprove: function(data, actions) {
+          return actions.order.capture().then(function(details) {
+            alert('Köszönjük a vásárlást, ' + details.payer.name.given_name + '!');
+          });
+        }
+      }).render('#paypal-button-container');
+    }
+  }
+</script>
